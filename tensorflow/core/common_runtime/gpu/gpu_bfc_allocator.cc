@@ -15,8 +15,6 @@ limitations under the License.
 
 #include "tensorflow/core/common_runtime/gpu/gpu_bfc_allocator.h"
 
-#include "tensorflow/stream_executor/multi_platform_manager.h"
-#include "tensorflow/stream_executor/stream_executor.h"
 #include "tensorflow/core/common_runtime/gpu/gpu_allocator_retry.h"
 #include "tensorflow/core/common_runtime/gpu/gpu_init.h"
 #include "tensorflow/core/lib/core/bits.h"
@@ -27,6 +25,7 @@ limitations under the License.
 #include "tensorflow/core/platform/logging.h"
 #include "tensorflow/core/platform/mutex.h"
 #include "tensorflow/core/platform/port.h"
+#include "tensorflow/core/platform/stream_executor.h"
 
 namespace gpu = ::perftools::gputools;
 
@@ -160,12 +159,14 @@ void* GPUBFCAllocator::AllocateRawInternal(size_t unused_alignment,
     // Start searching from the first bin for the smallest chunk that fits
     // rounded_bytes.
     Bin* b = it->second;
-    for (GPUBFCAllocator::Chunk* chunk : b->free_chunks) {
+    for (auto citer = b->free_chunks.begin(); citer != b->free_chunks.end();
+         ++citer) {
+      GPUBFCAllocator::Chunk* chunk = (*citer);
       DCHECK(!chunk->in_use());
       if (chunk->size >= rounded_bytes) {
         // We found an existing chunk that fits us that wasn't in use, so remove
         // it from the free bin structure prior to using.
-        RemoveFreeChunkFromBin(chunk);
+        RemoveFreeChunkIterFromBin(&b->free_chunks, citer);
 
         // If we can break the size of the chunk into two reasonably
         // large pieces, do so.
@@ -298,6 +299,15 @@ void GPUBFCAllocator::InsertFreeChunkIntoBin(GPUBFCAllocator::Chunk* c) {
   Bin* new_bin = it->second;
   c->bin = new_bin;
   new_bin->free_chunks.insert(c);
+}
+
+void GPUBFCAllocator::RemoveFreeChunkIterFromBin(
+    GPUBFCAllocator::Bin::FreeChunkSet* free_chunks,
+    const GPUBFCAllocator::Bin::FreeChunkSet::iterator& citer) {
+  GPUBFCAllocator::Chunk* c = *citer;
+  CHECK(!c->in_use() && c->bin);
+  free_chunks->erase(citer);
+  c->bin = nullptr;
 }
 
 void GPUBFCAllocator::RemoveFreeChunkFromBin(GPUBFCAllocator::Chunk* c) {
