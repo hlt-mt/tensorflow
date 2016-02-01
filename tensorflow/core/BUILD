@@ -128,7 +128,6 @@ cc_library(
         "platform/regexp.h",
         "platform/thread_annotations.h",
         "platform/types.h",
-        "public/env.h",  # Deprecated, use platform/env.h instead
         "public/status.h",  # Deprecated: use lib/core/status.h instead
     ],
     visibility = ["//visibility:public"],
@@ -195,7 +194,6 @@ tf_cuda_library(
         "framework/type_index.h",
         "framework/types.h",
         # Deprecated. TODO(josh11b): Use the framework/ versions instead.
-        "public/partial_tensor_shape.h",
         "public/tensor.h",
         "public/tensor_shape.h",
         # NOTE(josh11b): Will stay in public/
@@ -298,6 +296,7 @@ tf_cuda_library(
         "graph/graph_constructor.h",
         "graph/graph_def_builder.h",
         "graph/node_builder.h",
+        "graph/validate.h",
         "public/session.h",
         "public/session_options.h",
         "public/tensor_c_api.h",
@@ -644,7 +643,6 @@ cc_library(
         "platform/env.h",
         "platform/logging.h",
         "platform/port.h",
-        "public/env.h",
         "public/session.h",
         "public/tensor.h",
     ],
@@ -677,7 +675,6 @@ cc_library(
             "lib/**/*.cc",
             "platform/*.h",
             "platform/*.cc",
-            "public/env.h",  # TODO(josh11b): delete this
             "public/status.h",  # TODO(josh11b): delete this
         ] + tf_additional_lib_srcs(),
         exclude = [
@@ -724,7 +721,6 @@ tf_cuda_library(
             "util/**/*.cc",
             # TODO(josh11b): Delete these once everyone has switched to the
             # framework/ versions.
-            "public/partial_tensor_shape.h",
             "public/tensor.h",
             "public/tensor_shape.h",
         ],
